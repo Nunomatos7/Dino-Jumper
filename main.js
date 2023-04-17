@@ -47,7 +47,7 @@ cube.position.set(0, geometry.parameters.height / 2 + groundGeometry.parameters.
 scene.add(cube);
 
 // Create a container object for the line and obstacles
-const container = new THREE.Object3D();
+const container = new THREE.Object3D(); 
 scene.add(container);
 
 // Create a ground
@@ -69,9 +69,11 @@ cube.position.y = -1;
 // Add the cube to the scene
 scene.add(cube);
 
+// Create an ambient light
 const ambientLight = new THREE.AmbientLight('rgb(255, 255, 255)', 0.2);
 scene.add(ambientLight);
 
+// Create a spotlight
 const spotLight = new THREE.SpotLight('rgb(0, 255, 255)', 0.8);
 spotLight.position.set(-5, 8, 0);
 scene.add(spotLight);
@@ -105,14 +107,20 @@ const obstacleMaterial = new THREE.MeshPhongMaterial({
     color: 0xEE7700
 });
 let i = 0;
-while (i < 5) {
+while (i < 100) {
     i++;
     const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
 
     // Set position for the obstacles on the line
-    const distanceBetweenObstacles = 10;
+    const distanceBetweenObstacles = 8;
     obstacle.position.x = -2 + i * distanceBetweenObstacles;
     obstacle.position.y = -1;
+    obstacle.scale.set(Math.random() * 1 + 0.5, Math.random() * 1 + 0.5, Math.random() * 1 + 0.5);
+
+     // Add random rotation to the obstacle
+     obstacle.rotation.x = Math.random() * Math.PI * 2;
+     obstacle.rotation.y = Math.random() * Math.PI * 2;
+     obstacle.rotation.z = Math.random() * Math.PI * 2;
 
     // Add obstacles to the container object
     container.add(obstacle);
@@ -155,11 +163,11 @@ function animate() {
     // Move the container object
     container.position.x -= 0.05;
 
-    // If the container object is out of view, reset its position
-    if (container.position.x < -10) {
-        container.position.x = 0;
-    }
-
+    obstacles.forEach((obstacle) => {
+        obstacle.rotation.x += 0.01;
+        obstacle.rotation.y += 0.01;
+        obstacle.rotation.z += 0.01;
+    });
 
     // Check for collisions with the cube
     let col = false;

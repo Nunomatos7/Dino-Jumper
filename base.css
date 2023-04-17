@@ -1,3 +1,9 @@
+#score {
+  font-size: 24px;
+  background-color: #F0F0F0;
+  padding: 10px;
+}
+
 #game-over {
     position: absolute;
     top: 0;
@@ -56,4 +62,5 @@
   #game-canvas {
     display: none;
   }
+
   
