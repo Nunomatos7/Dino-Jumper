@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Project</title>
+	<link rel="stylesheet" href="base.css">
+	<script type="text/javascript" src="http://threejs.org/build/three.js" defer></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.min.js"></script>
+	<script type="text/javascript" src="main.js" defer></script>
+	<script src="https://threejs.org/examples/jsm/controls/OrbitControls.js"></script>
+	<script src="https://threejs.org/examples/jsm/objects/Water.js"></script>
+	<script src="https://threejs.org/examples/jsm/objects/Sky.js"></script>
+
+</head>
+<style>
+	body {margin: 0;	
+		padding: 0;
+		overflow: hidden;}
+
+	#game-over {
+		display: none; /* Hide the "Game Over" button by default */
+	}
+</style>
+<body>
+	<div id="Tag3DScene"></div>
+	<div id="score">Score: 0</div>
+	<div id="game-over">
+		<h1>Game Over</h1>
+		<p>Final Score: <span id="final-score"></span></p>
+		<button id="restart-button">Restart</button>
+	</div>
+	<!--<div id="start-screen">
+		<h1>Welcome to the game</h1>
+		<p>Press spacebar to begin</p>
+	</div>
+	<div id="pause-screen">
+		<h1>Game Paused</h1>
+		<p>Press spacebar to continue</p>
+	-->
+  
+</body>
+</html>
