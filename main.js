@@ -49,7 +49,7 @@ scene.add(cube);
 // Create a container object for the line and obstacles
 const container = new THREE.Object3D(); 
 scene.add(container);
-
+    
 // Create a ground
 const groundMaterial = new THREE.MeshPhongMaterial({
     color: 0xDACCBF
