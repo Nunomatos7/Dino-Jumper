@@ -49,7 +49,7 @@ scene.add(cube);
 // Create a container object for the line and obstacles
 const container = new THREE.Object3D(); 
 scene.add(container);
-    
+
 // Create a ground
 const groundMaterial = new THREE.MeshPhongMaterial({
     color: 0xDACCBF
@@ -75,7 +75,7 @@ scene.add(ambientLight);
 
 // Create a spotlight
 const spotLight = new THREE.SpotLight('rgb(0, 255, 255)', 0.8);
-spotLight.position.set(-5, 8, 0);
+spotLight.position.set(-5, 30, 0);
 scene.add(spotLight);
 
 // Create a second spotlight
@@ -169,6 +169,7 @@ function animate() {
         obstacle.rotation.z += 0.01;
     });
 
+
     // Check for collisions with the cube
     let col = false;
     obstacles.forEach((obstacle) => {
@@ -193,6 +194,7 @@ function animate() {
     if (isJumping) {
         const now = Date.now();
         const elapsed = now - jumpStart;
+        cube.rotation.x += 0.045;
 
         if (elapsed >= jumpDuration) {
             isJumping = false;
