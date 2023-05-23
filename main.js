@@ -73,6 +73,9 @@ loader1.load('./Frog.glb', function(gltf) {
     // turn the frog 90 degrees
     frog.rotation.y = Math.PI / 2;
 
+    // Set the frog's size
+    frog.scale.set(0.7, 0.7, 0.7);
+
     // Add the frog to the scene
     scene.add(frog);
 });
