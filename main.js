@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from "https://cdn.rawgit.com/mrdoob/three.js/master/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "https://cdn.rawgit.com/mrdoob/three.js/master/examples/jsm/controls/OrbitControls.js";
 
 // Create a scene
 const scene = new THREE.Scene();
@@ -19,11 +20,12 @@ camera.lookAt(0, 0, 0);
 
 
 // Create a renderer
-const renderer = new THREE.WebGLRenderer();
-
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 // Set the renderer size
 renderer.setSize(window.innerWidth, window.innerHeight);
-
+// Enable shadow mapping
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // Add the renderer to the HTML document
 document.body.appendChild(renderer.domElement);
 
@@ -33,6 +35,16 @@ window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 });
+
+// Create OrbitControls
+const controls = new OrbitControls(camera, renderer.domElement);
+
+// Set options for OrbitControls
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.rotateSpeed = 0.5;
+controls.maxDistance = 10;
+controls.minDistance = 1;
 
 const loader = new THREE.CubeTextureLoader();
 const texture = loader.load([
@@ -47,9 +59,7 @@ const texture = loader.load([
 scene.background = texture;
 scene.environment = null;
 
-// Create a cube
 const geometry = new THREE.BoxGeometry();
-
 const groundGeometry = new THREE.PlaneGeometry(3000, 10, 1, 1);
 
 // add texture to cube
@@ -58,6 +68,9 @@ const textureLoader = new THREE.TextureLoader();
 let frog;
 
 const loader1 = new GLTFLoader();
+const placeholderModel = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+scene.add(placeholderModel);
+
 loader1.load('./Frog.glb', function(gltf) {
     frog = gltf.scene; // Assign the loaded gltf.scene to the variable
     
@@ -76,8 +89,22 @@ loader1.load('./Frog.glb', function(gltf) {
     // Set the frog's size
     frog.scale.set(0.7, 0.7, 0.7);
 
-    // Add the frog to the scene
-    scene.add(frog);
+    scene.remove(placeholderModel);
+
+
+    textureLoader.load(
+        './water.png',
+        function (texture) {
+          // Create a material with the loaded texture
+          const material = new THREE.MeshStandardMaterial({ map: texture });
+  
+          // Apply the material to the frog model
+          frog.material = material;
+  
+          // Add the frog model to the scene
+          scene.add(frog);
+        }
+      );
 });
 
 
@@ -88,16 +115,14 @@ const container = new THREE.Object3D();
 scene.add(container);
 
 // Create a ground
-const groundMaterial = new THREE.MeshPhongMaterial({
- 
-});
+const groundMaterial = new THREE.MeshPhongMaterial({});
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-ground.receiveShadow = true;
-renderer.shadowMap.enabled = true;
-
 // Set the ground position
 ground.rotation.x = -Math.PI / 2;
 ground.position.y = -1.5;
+// Enable shadow casting and receiving on the ground
+ground.castShadow = true;
+ground.receiveShadow = true;
 
 //add texture to ground
 const texture3 = textureLoader.load('./water.png');
@@ -106,8 +131,6 @@ groundMaterial.map = texture3;
 // Add the ground to the scene
 scene.add(ground);
 
-
-
 // Create an ambient light
 const ambientLight = new THREE.AmbientLight('rgb(255, 255, 255)', 0.2);
 scene.add(ambientLight);
@@ -115,23 +138,13 @@ scene.add(ambientLight);
 // Create a spotlight
 const spotLight = new THREE.SpotLight('rgb(0, 255, 255)', 0.8);
 spotLight.position.set(-5, 30, 0);
+spotLight.penumbra = 0.5;
+spotLight.castShadow = true;
+spotLight.shadow.mapSize.width = 1024;
+spotLight.shadow.mapSize.height = 1024;
+spotLight.shadow.camera.near = 0.1;
+spotLight.shadow.camera.far = 10000;
 scene.add(spotLight);
-
-// Create a second spotlight
-const spotlight2 = new THREE.SpotLight(0xffffff, 1, 100, Math.PI / 4, 0.5);
-spotlight2.position.set(-10, 9, 2);
-spotlight2.target.position.set(0, 0, 0);
-spotlight2.castShadow = true;
-spotlight2.shadow.mapSize.width = 1024;
-spotlight2.shadow.mapSize.height = 1024;
-spotlight2.shadow.camera.near = 0.1;
-spotlight2.shadow.camera.far = 100;
-scene.add(spotlight2);
-
-spotlight2.shadow.mapSize.width = 1024;
-spotlight2.shadow.mapSize.height = 1024;
-spotlight2.shadow.camera.near = 0.1;
-spotlight2.shadow.camera.far = 100;
 
 
 // Create a line
@@ -161,7 +174,7 @@ while (i < 100) {
 
     // Set position for the obstacles on the line
     const distanceBetweenObstacles = 8;
-    obstacle.position.x = -2 + i * distanceBetweenObstacles;
+    obstacle.position.x = 3 + i * distanceBetweenObstacles;
     obstacle.position.y = -0.5;
     obstacle.scale.set(Math.random() * 1 + 0.5, Math.random() * 1 + 0.5, Math.random() * 1 + 0.5);
 
@@ -181,7 +194,7 @@ while (i < 100) {
 let isJumping = false;
 let isFrogJumping = false;
 let jumpHeight = 3;
-let jumpDuration = 1000;
+let jumpDuration = 1100;
 let jumpStart = null;
 let savedJumpStart = null;
 let savedJumpY = null;
@@ -287,16 +300,27 @@ window.addEventListener("keydown", (event) => {
     }
 });
 
+let gameSpeed = 0.0001;
+let scoreThreshold = 1000;
+let previousSpeed = 0;
 
+function showSpeedWarning() {
+    const speedWarning = document.getElementById("speed-warning");
+    speedWarning.style.display = "block";
+    setTimeout(() => {
+      speedWarning.style.display = "none";
+    }, 2000); // Hide the warning message after 2 seconds
+  }
 
-/*
-// Add a click event listener to an HTML button element
-const button = document.querySelector("#unpause-button");
-button.addEventListener("click", () => {
-    isPaused = false;
-    requestAnimationFrame(animate);
-});
-*/
+  const notification = document.getElementById('notification');
+
+  function showNotification() {
+    notification.classList.add('show');
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 2000); // Hide the warning message after 2 seconds
+  }
+
 
 // Animate the scene
 function animate() {
@@ -306,8 +330,27 @@ function animate() {
 
     requestAnimationFrame(animate);
 
+    // Increase game speed based on score
+    if (score >= scoreThreshold) {
+        gameSpeed += 0.003;
+        scoreThreshold += 1000;
+    }
+
+    // Move the container object with the adjusted game speed
+    container.position.x -= gameSpeed;
+
     // Move the container object
     container.position.x -= 0.05;
+
+    if (gameSpeed > previousSpeed && gameSpeed != 0.0001) {
+        showNotification();
+        previousSpeed = gameSpeed;
+  }
+
+    // Restrict the camera's position to stay above the ground plane
+    if (camera.position.y < 0) {
+        camera.position.y = 0;
+    }
 
 
     obstacles.forEach((obstacle) => {
@@ -318,7 +361,7 @@ function animate() {
     });
 
 
-    // Check for collisions with the cube
+    // Check for collisions with the frog
     let col = false;
     obstacles.forEach((obstacle) => {
         const obstaclePos = new THREE.Vector3();
@@ -327,7 +370,7 @@ function animate() {
         if (obstaclePos.distanceTo(frog.position) < obstacle.geometry.parameters.width / 2 + obstacle.geometry.parameters.width / 2) {
             col = true;;
             endGame();
-            SE_TIRAR_ESTA_LINHA_O_JOGO_NAO_PARA_NAS_COLISOES
+            SE_TIRAR_ESTA_LINHA_O_JOGO_NAO_PARA_NAS_COLISOES_E_O_RESULTADO_NAO_GRAVA
         }
     });
     if (!col) {
@@ -350,7 +393,6 @@ function updateFrogPosition() {
     if (isFrogJumping) {
         const now = Date.now();
         const elapsed = now - jumpStart;
-        // cube.rotation.x += 0.045;
 
         if (elapsed >= jumpDuration) {
             isFrogJumping = false;
@@ -418,7 +460,7 @@ function restartGame() {
     score = 0;
     scoreText.innerHTML = "Score: " + score;
 
-    // Reset the cube position
+    // Reset the frog position
     frog.position.set(0, geometry.parameters.height / 2 + groundGeometry.parameters.height, 0);
 
     // Reset the container position
@@ -430,6 +472,20 @@ function restartGame() {
         obstacle.position.x = -2 + i * distanceBetweenObstacles;
         obstacle.position.y = -1;
     });
+
+    // Reset the game speed
+    gameSpeed = 0.0001;
+    scoreThreshold = 1000;
+    
+    if (score >= scoreThreshold) {
+        gameSpeed += 0.003;
+        scoreThreshold += 1000;
+    }
+
+    // Move the container object with the adjusted game speed
+    container.position.x -= gameSpeed;
+
+
 }
 
 let starting = false;
@@ -445,50 +501,33 @@ window.addEventListener("keydown", (event) => {
 // Get the start menu element
 const startMenu = document.getElementById("start-menu");
 
-// Add an event listener for the space bar keypress
+// Add event listeners for the space bar and enter keypress
+let spacePressed = false;
 document.addEventListener("keydown", event => {
-  if (event.code === "Enter") {
+  if (event.code === "Space") {
+    // Set spacePressed to true when the space bar is pressed
+    spacePressed = true;
+  } else if (event.code === "Enter" && spacePressed) {
     // Hide the start menu
     startMenu.style.display = "none";
 
-    if(startGame==false){
-        // Start the game
-        animate();
-        startGame=true;
+    if (startGame == false) {
+      // Start the game
+      animate();
+      startGame = true;
     }
   }
 });
 
-// Define a variable to store the current camera position and rotation
-let cameraPosition = camera.position.clone();
-let cameraRotation = camera.rotation.clone();
-
-// Define a function to update the camera position and rotation
-function updateCamera() {
-  // If the game is paused, update the camera position and rotation
-  if (isPaused) {
-    // Calculate the elapsed time since the last frame
-    const deltaTime = clock.getDelta();
-
-    // Move the camera forward at a constant speed
-    const cameraSpeed = 2;
-    cameraPosition.z -= cameraSpeed * deltaTime;
-
-    // Rotate the camera slightly to give a better view of the obstacles
-    const cameraRotationSpeed = 0.05;
-    cameraRotation.y += cameraRotationSpeed * deltaTime;
-
-    // Set the camera position and rotation
-    camera.position.copy(cameraPosition);
-    camera.rotation.copy(cameraRotation);
+// Add an event listener for the space bar keyup
+document.addEventListener("keyup", event => {
+  if (event.code === "Space") {
+    // Reset spacePressed to false when the space bar is released
+    spacePressed = false;
   }
+});
 
-  // Request the next frame
-  requestAnimationFrame(updateCamera);
-}
 
-// Call the updateCamera function to start the animation loop
-updateCamera();
 
 const restartCameraBtn = document.getElementById("restart-camera-btn");
 restartCameraBtn.addEventListener("click", () => {
@@ -499,47 +538,4 @@ restartCameraBtn.addEventListener("click", () => {
 
 });
 
-
-// Add an event listener for the change camera button
-const changeCameraBtn = document.getElementById("change-camera-btn");
-changeCameraBtn.addEventListener("click", () => {
-    
-    // Update the camera position
-    // Create variables for the mouse position
-    var mouseDown = false;
-    var mouseX = 0;
-    var mouseY = 0;
-
-    // Add event listeners for mouse events
-    renderer.domElement.addEventListener('mousedown', function(event) {
-        mouseDown = true;
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-});
-
-// Set a minimum height for the camera's y-coordinate
-var minHeight = -1;
-
-renderer.domElement.addEventListener('mousemove', function(event) {
-    if (mouseDown) {
-        var deltaX = event.clientX - mouseX;
-        var deltaY = event.clientY - mouseY;
-
-        camera.position.x += deltaX / 100;
-        camera.position.y -= deltaY / 100;
-    
-        // Check if the new camera position would be below the ground position
-        if (camera.position.y < minHeight) {
-            camera.position.y = minHeight;
-        }
-    
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-    }
-});
-
-renderer.domElement.addEventListener('mouseup', function(event) {
-    mouseDown = false;
-});
-});
 

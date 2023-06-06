@@ -8,7 +8,7 @@
 	<script type="importmap">
         {
             "imports": {
-                "three": "https://cdn.skypack.dev/three"
+                "three": "https://unpkg.com/three@0.153.0/build/three.module.js"
             }
         }
     </script>
@@ -79,12 +79,68 @@
 		justify-content: center;
 		align-items: center;
 		z-index: 999; /* set a high z-index to make sure it's on top of everything */
+	}
+
+	#notification {
+		position: fixed;
+		bottom: 50px;
+		left: 50%;
+		transform: translateX(-50%);
+		padding: 10px;
+		background-color: #f1f1f1;
+		border: 1px solid #ddd;
+		border-radius: 10px;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+		z-index: 9999;
+		opacity: 0;
+		transition: opacity 0.3s ease-in-out;
 	  }
+	  
+	  #notification.show {
+		opacity: 1;
+	  }
+	  
+	  #notification p {
+		margin: 0;
+		font-size: 16px;
+		font-weight: bold;
+	  }
+	  
+	  #notification button {
+		margin-top: 10px;
+	  }
+	  
+	  .balloon {
+		background-color: #f1f1f1;
+		border-radius: 80%;
+		padding: 15px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		cursor: pointer;
+	  }
+	  
+	  .balloon::after {
+		content: '';
+		position: absolute;
+		bottom: -10px;
+		left: 50%;
+		transform: translateX(-50%);
+		border: 10px solid transparent;
+		border-top-color: #f1f1f1;
+	  }
+	  
+	  .balloon:hover {
+		background-color: #e0e0e0;
+	  }
+	  
+	  
 	  
 </style>
 <body>
 	<div id="start-menu">
-		<h1>Press enter to start</h1>
+		<h1>Press space + enter to start</h1>
 	</div>
 	<div id="Tag3DScene"></div>
 	<div id="score">Score: 0</div>
@@ -93,10 +149,12 @@
 		<p>Final Score: <span id="final-score"></span></p>
 		<button id="restart-button">Restart</button>
 	</div>
+	<div id="notification" class="balloon">
+		<p>Speed Increased</p>
+	  </div>
 	<div id="pause-screen">
 		<h1>Game Paused</h1>
 		<p>Press P to continue</p>
-		<button id="change-camera-btn">Change Camera Position</button>
 		<button id="restart-camera-btn">Reset Camera Position</button>
 	  </div>	
 </body>
